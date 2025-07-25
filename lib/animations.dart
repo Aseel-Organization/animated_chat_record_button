@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:animated_chat_record_button/audio_handlers.dart';
 import 'package:animated_chat_record_button/slide_animation.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
 class TopContainerSlider extends StatefulWidget {
@@ -234,8 +233,8 @@ class AnimationGlop extends State<StatefulWidget>
   AudioHandlers audioHandlers = AudioHandlers();
   double recordButtonSize = 0;
   double recordButtonScale = 1.9;
-  bool _permissionsGranted = false;
-  bool _permissionCheckInProgress = false;
+  // bool _permissionsGranted = false;
+  // bool _permissionCheckInProgress = false;
   Animation<double> get scaleAnimation => _scaleAnimation;
   Animation<double> get roundedVerticalContainerAnimationHight =>
       _roundedVerticalContainerAnimationHight;
@@ -363,46 +362,7 @@ class AnimationGlop extends State<StatefulWidget>
     WidgetsBinding.instance.addPostFrameCallback((_) {});
   }
 
-// Async permission request - non-blocking
-  Future<void> requestPermissionsAsync() async {
-    if (_permissionCheckInProgress || _permissionsGranted) return;
-
-    _permissionCheckInProgress = true;
-
-    try {
-      final results = await Future.wait([
-        Permission.storage.request(),
-        Permission.microphone.request(),
-      ]);
-
-      final storagePermission = results[0];
-      final micPermission = results[1];
-
-      if (storagePermission.isGranted) {
-        log("Storage permission granted");
-      } else if (storagePermission.isPermanentlyDenied) {
-        log("Storage permission permanently denied. Open settings.");
-        await openAppSettings();
-      }
-
-      if (micPermission.isGranted) {
-        log("Mic permission granted");
-        _permissionsGranted = true;
-      } else if (micPermission.isDenied) {
-        log("Mic permission denied - will retry on next interaction");
-      }
-    } catch (e) {
-      log("Permission request error: $e");
-    } finally {
-      _permissionCheckInProgress = false;
-    }
-  }
-
   // Synchronous permission check - non-blocking fallback
-  void requestPermissions() {
-    // Don't block - just schedule async request
-    Future.microtask(() => requestPermissionsAsync());
-  }
 
   void startMicFade() {
     micFadeController.repeat(reverse: true);

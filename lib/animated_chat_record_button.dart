@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:animated_chat_record_button/animations.dart';
@@ -8,6 +9,7 @@ import 'package:animated_chat_record_button/recoding_container.dart';
 import 'package:animated_chat_record_button/secondary_recording_container.dart';
 import 'package:animated_chat_record_button/slide_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Configuration class for styling the record button
 class RecordButtonConfig {
@@ -169,7 +171,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   @override
   void initState() {
     super.initState();
-    _animationController.requestPermissions();
+    requestPermissions();
 
     _initializeControllers();
     _setupTextListener();
@@ -180,7 +182,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     if (widget.textEditingController != null) {
       // Set initial state
       _hasText = widget.textEditingController!.text.isNotEmpty;
-
       // Add listener
       widget.textEditingController!.addListener(_onTextChanged);
     }
@@ -193,6 +194,29 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       setState(() {
         _hasText = hasTextNow;
       });
+    }
+  }
+
+  void requestPermissions() async {
+    final PermissionStatus storagePermission =
+        await Permission.storage.request();
+    final PermissionStatus mic = await Permission.microphone.request();
+    ;
+
+    if (storagePermission.isGranted) {
+      log("Storage permission granted");
+    } else if (storagePermission.isDenied) {
+      log("Storage permission denied. Requesting again...");
+    } else if (storagePermission.isPermanentlyDenied) {
+      log("Storage permission permanently denied. Open settings.");
+      await openAppSettings();
+    }
+
+    if (mic.isGranted) {
+      log("mic permission granted");
+    }
+    if (storagePermission.isGranted) {
+      log("notifications permission granted");
     }
   }
 
