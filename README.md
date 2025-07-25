@@ -4,9 +4,13 @@ A beautiful and fully customizable WhatsApp-like animated recording button for F
 
 ## Demo
 
-<!-- Add your demo video here -->
+### Quick Preview (GIF)
 
 ![Demo](https://res.cloudinary.com/dpoqqpqjv/image/upload/v1753417680/demo-ezgif.com-video-to-gif-converter_qm1ocx.gif)
+
+### Full Demo Video
+
+[🎥 Watch Full Demo Video](https://res.cloudinary.com/dpoqqpqjv/video/upload/v1753417663/demo_yjuujq.mp4)
 
 ## Features
 
@@ -346,7 +350,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-If you like this package, please give it a ⭐ on [GitHub](https://github.com/yourusername/animated_chat_record_button) and consider supporting the developer.
+If you like this package, please give it a ⭐ on [GitHub](https://github.com/Vortex200000/animated_chat_record_button) and consider supporting the developer.
+
+👍 Like the content if it helped you
+🔄 Share it with other Flutter developers
+💬 Follow me for more Flutter packages and tutorials
+Your support means a lot and helps me create more awesome Flutter packages! 🚀
 
 ## Changelog
 
