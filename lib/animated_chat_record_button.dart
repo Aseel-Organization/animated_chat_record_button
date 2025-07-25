@@ -169,6 +169,8 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   @override
   void initState() {
     super.initState();
+    _animationController.requestPermissions();
+
     _initializeControllers();
     _setupTextListener();
   }
@@ -207,8 +209,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       recordButtonScaleInit: widget.config.recordButtonScaleVal,
       roundedContainerWidhdInit: widget.config.slideUpContainerWidth,
     );
-
-    _animationController.requestPermissions();
   }
 
   @override

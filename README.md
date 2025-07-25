@@ -338,7 +338,7 @@ Default path format: `/storage/emulated/0/Android/data/your.package.name/files/r
 - Dart: >=2.12.0
 - Android: API level 21+
 - iOS: 9.0+
-
+- G
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
