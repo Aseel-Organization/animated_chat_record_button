@@ -5,9 +5,8 @@ A beautiful and fully customizable WhatsApp-like animated recording button for F
 ## Demo
 
 <!-- Add your demo video here -->
-
-![Demo](https://res.cloudinary.com/dpoqqpqjv/image/upload/v1753417680/demo-ezgif.com-video-to-gif-converter_qm1ocx.gif)
-![Demo Video](phttps://res.cloudinary.com/dpoqqpqjv/video/upload/v1753417663/demo_yjuujq.mp4)
+<!--
+![Demo](https://res.cloudinary.com/dpoqqpqjv/image/upload/v1753417680/demo-ezgif.com-video-to-gif-converter_qm1ocx.gif) -->
 
 ## Features
 
