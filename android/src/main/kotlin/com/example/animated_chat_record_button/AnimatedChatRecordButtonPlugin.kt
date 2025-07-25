@@ -35,10 +35,7 @@ class AnimatedChatRecordButtonPlugin: FlutterPlugin, MethodCallHandler, Activity
   private var isRecording = false
   private var isPaused = false
   private var localRecordingPath: String? = null
-  // Visualizer
-  // private var visualizerEventSink: EventChannel.EventSink? = null
-  // private var visualizerHandler: Handler? = null
-  // private var visualizerRunnable: Runnable? = null
+
   
   private var visualizerThread: Thread? = null
   private var isVisualizing = false
@@ -56,8 +53,7 @@ class AnimatedChatRecordButtonPlugin: FlutterPlugin, MethodCallHandler, Activity
     methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "your_plugin/audio")
     methodChannel.setMethodCallHandler(this)
     
-    // visualizerChannel = EventChannel(flutterPluginBinding.binaryMessenger, "your_plugin/visualizer")
-    // visualizerChannel.setStreamHandler(this)
+
     
 
 
@@ -95,25 +91,7 @@ class AnimatedChatRecordButtonPlugin: FlutterPlugin, MethodCallHandler, Activity
     }
   }
 
-  // private fun requestPermissions(result: Result) {
-  //   val permissions = arrayOf(
-  //     Manifest.permission.RECORD_AUDIO,
-  //     Manifest.permission.WRITE_EXTERNAL_STORAGE
-  //   )
-    
-  //   val hasPermissions = permissions.all { permission ->
-  //     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-  //   }
-    
-  //   if (hasPermissions) {
-  //     result.success(true)
-  //   } else {
-  //     activity?.let { act ->
-  //       ActivityCompat.requestPermissions(act, permissions, REQUEST_PERMISSION_CODE)
-  //       result.success(false)
-  //     } ?: result.success(false)
-  //   }
-  // }
+
 
   private fun startRecording(call: MethodCall, result: Result) {
     val filePath = call.argument<String>("filePath")
@@ -236,129 +214,11 @@ private fun startMicAmplitudeStream() {
 
 
 
-// private fun startVisualizer(result: Result) {
-//     try {
-//         val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
-
-//         audioRecord = AudioRecord(
-//             MediaRecorder.AudioSource.MIC,
-//             SAMPLE_RATE,
-//             CHANNEL_CONFIG,
-//             AUDIO_FORMAT,
-//             bufferSize
-//         )
-
-//         audioRecord?.startRecording()
-
-//         visualizerHandler = Handler(Looper.getMainLooper())
-//         visualizerRunnable = object : Runnable {
-//             override fun run() {
-//                 if (audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-//                     val buffer = ShortArray(bufferSize)
-//                     val read = audioRecord?.read(buffer, 0, bufferSize) ?: 0
-
-//                     if (read > 0) {
-//                         val amplitudes = mutableListOf<Double>()
-
-//                         for (i in 0 until read) {
-//                             val amplitude = abs(buffer[i].toDouble()) / Short.MAX_VALUE
-//                             amplitudes.add(amplitude.coerceIn(0.0, 1.0)) // Normalize between 0.0 and 1.0
-//                         }
-
-//                         visualizerEventSink?.success(amplitudes)
-//                     }
-
-//                     visualizerHandler?.postDelayed(this, 16) // ~60 FPS update
-//                 }
-//             }
-//         }
-
-//         visualizerHandler?.post(visualizerRunnable!!)
-//         result.success(true)
-
-//     } catch (e: Exception) {
-//         result.error("VISUALIZER_ERROR", e.message, null)
-//     }
-// }
-
-  // private fun startVisualizer(result: Result) {
-  //   try {
-  //     val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
-      
-  //     audioRecord = AudioRecord(
-  //       MediaRecorder.AudioSource.MIC,
-  //       SAMPLE_RATE,
-  //       CHANNEL_CONFIG,
-  //       AUDIO_FORMAT,
-  //       bufferSize
-  //     )
-      
-  //     audioRecord?.startRecording()
-      
-  //     visualizerHandler = Handler(Looper.getMainLooper())
-  //     visualizerRunnable = object : Runnable {
-  //       override fun run() {
-  //         if (audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-  //           val buffer = ShortArray(bufferSize)
-  //           val read = audioRecord?.read(buffer, 0, bufferSize) ?: 0
-            
-  //           if (read > 0) {
-  //             val amplitudes = mutableListOf<Double>()
-  //             val chunkSize = read / 10 // Create 10 bars
-              
-  //             for (i in 0 until 10) {
-  //               val start = i * chunkSize
-  //               val end = minOf((i + 1) * chunkSize, read)
-  //               var sum = 0.0
-                
-  //               for (j in start until end) {
-  //                 sum += abs(buffer[j].toDouble())
-  //               }
-                
-  //               val average = sum / (end - start)
-  //               val db = if (average > 0) 20 * log10(average / Short.MAX_VALUE) else -80.0
-  //               val normalized = maxOf(0.0, minOf(1.0, (db + 80) / 80))
-  //               amplitudes.add(normalized)
-  //             }
-              
-  //             visualizerEventSink?.success(amplitudes)
-  //           }
-            
-  //           visualizerHandler?.postDelayed(this, 50) // Update every 50ms
-  //         }
-  //       }
-  //     }
-      
-  //     visualizerHandler?.post(visualizerRunnable!!)
-  //     result.success(true)
-      
-  //   } catch (e: Exception) {
-  //     result.error("VISUALIZER_ERROR", e.message, null)
-  //   }
-  // }
-
-  // private fun stopVisualizer(result: Result) {
-  //   visualizerRunnable?.let { visualizerHandler?.removeCallbacks(it) }
-  //   audioRecord?.stop()
-  //   audioRecord?.release()
-  //   audioRecord = null
-  //   result.success(true)
-  // }
-
-
       private fun stopMicAmplitudeStream() {
         isVisualizing = false
         visualizerThread?.join()
     }
 
-  // EventChannel.StreamHandler methods
-  // override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-  //   visualizerEventSink = events
-  // }
-
-  // override fun onCancel(arguments: Any?) {
-  //   visualizerEventSink = null
-  // }
 
   // ActivityAware methods
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {

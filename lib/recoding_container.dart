@@ -40,7 +40,8 @@ class RecordingContainer extends StatefulWidget {
       required this.animationGlop,
       this.onRecordingEnd,
       required this.config,
-      this.onLockedRecording, required this.onStartRecording});
+      this.onLockedRecording,
+      required this.onStartRecording});
   final Function(bool doesLocked)? onLockedRecording;
   final Function(bool doestStartRecord)? onStartRecording;
 

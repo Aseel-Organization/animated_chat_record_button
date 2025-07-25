@@ -9,11 +9,15 @@ import 'package:vibration/vibration.dart';
 
 class TopContainerSlider extends StatefulWidget {
   const TopContainerSlider(
-      {super.key, required this.animationGlop, this.containerColor});
+      {super.key,
+      required this.animationGlop,
+      this.containerColor,
+      this.arrowColor});
 
   final AnimationGlop animationGlop;
   final Color? containerColor;
 
+  final Color? arrowColor;
   @override
   State<TopContainerSlider> createState() => _TopContainerSliderState();
 }
@@ -55,7 +59,7 @@ class _TopContainerSliderState extends State<TopContainerSlider> {
       valueListenable: widget.animationGlop.isMovingVertical,
       builder: (context, isMovingVertical, child) => ValueListenableBuilder(
         valueListenable: widget.animationGlop.isReachedLock,
-        builder: (context, isMovingVert, _) {
+        builder: (context, isReachedLck, _) {
           return ValueListenableBuilder(
             valueListenable: widget.animationGlop.shackleLock,
             builder: (context, vValue, _) {
@@ -70,7 +74,7 @@ class _TopContainerSliderState extends State<TopContainerSlider> {
                             (widget.animationGlop.roundedContainerWidth * 0.3) *
                                 0.2,
                             (widget.animationGlop.roundedContainerWidth * 0.3))
-                    : isMovingVert
+                    : isReachedLck
                         ? (widget.animationGlop.roundedContainerWidth * 0.3)
                         : widget.animationGlop.shackleAnimation.value,
 
@@ -93,17 +97,20 @@ class _TopContainerSliderState extends State<TopContainerSlider> {
     return Positioned(
       left: 0,
       right: 0,
-      top: ((widget.animationGlop.roundedContainerHight - 5) * 0.65) -
+      top: ((widget.animationGlop.roundedContainerHight - 20) * 0.65) -
           widget.animationGlop.roundedContainerWidth * 0.5 +
           widget.animationGlop.slideUpArrowAnimation.value,
       child: ValueListenableBuilder(
-        valueListenable: widget.animationGlop.arrowOpacity,
-        builder: (context, value, child) => Opacity(
-          opacity: value,
-          child: const Icon(
-            Icons.keyboard_arrow_up_rounded,
-            color: Colors.grey,
-            size: 20,
+        valueListenable: widget.animationGlop.isMovingVertical,
+        builder: (context, isVertical, child) => ValueListenableBuilder(
+          valueListenable: widget.animationGlop.arrowOpacity,
+          builder: (context, value, child) => Opacity(
+            opacity: isVertical ? value : 1,
+            child: Icon(
+              Icons.keyboard_arrow_up_rounded,
+              color: widget.arrowColor,
+              size: 15,
+            ),
           ),
         ),
       ),
@@ -126,7 +133,7 @@ class _TopContainerSliderState extends State<TopContainerSlider> {
             height: widget.animationGlop.roundedContainerWidth * 0.3,
             width: widget.animationGlop.roundedContainerWidth * 0.3,
             decoration: BoxDecoration(
-                color: color, borderRadius: BorderRadius.circular(5)),
+                color: color, borderRadius: BorderRadius.circular(2)),
           ),
         ));
   }
@@ -245,7 +252,9 @@ class AnimationGlop extends State<StatefulWidget>
       {double roundedContainerHightt = 170,
       required double recordButtonSizeInit,
       double recordButtonScaleInit = 1.9,
-      double roundedContainerWidhdInit = 55}) {
+      double roundedContainerWidhdInit = 55,
+      required Color lockColorFirst,
+      required Color lockColorSecond}) {
     roundedContainerHight = roundedContainerHightt;
     recordButtonScale = recordButtonScaleInit;
     roundedContainerWidth = roundedContainerWidhdInit;
@@ -274,7 +283,7 @@ class AnimationGlop extends State<StatefulWidget>
     );
 
     micFadeController = AnimationController(
-      duration: Duration(milliseconds: 200),
+      duration: Duration(milliseconds: 300),
       vsync: this,
     );
     shackleAnimationController = AnimationController(
@@ -324,11 +333,9 @@ class AnimationGlop extends State<StatefulWidget>
     colorController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
 
-    colorAnimation =
-        ColorTween(begin: Color.fromARGB(255, 107, 107, 107), end: Colors.black)
-            .animate(CurvedAnimation(
-                parent: colorController,
-                curve: Curves.easeInOutCubicEmphasized));
+    colorAnimation = ColorTween(begin: lockColorFirst, end: lockColorSecond)
+        .animate(CurvedAnimation(
+            parent: colorController, curve: Curves.easeInOutCubicEmphasized));
 
     _roundedVerticalContainerController.addStatusListener(
       (status) {
@@ -488,6 +495,8 @@ class AnimationGlop extends State<StatefulWidget>
     if (xAxisVal.value == 0.0 && dyOffsetVerticalUpdate.value.abs() == 0.0) {
       currentDirection = 'none';
       onHorizontalEnd(details);
+      isMovingVertical.value = false;
+      isReachedLock.value = false;
 
       // onVerticalDragEnd(details);
 
@@ -551,6 +560,7 @@ class AnimationGlop extends State<StatefulWidget>
     isHorizontalMoving.value = false;
     roundedContainerHorizontal.value = 0;
     roundedOpacity.value = 1.0;
+    isReachedCancel.value = false;
   }
 
   void onHorizontalCancel() {
@@ -559,6 +569,7 @@ class AnimationGlop extends State<StatefulWidget>
     isHorizontalMoving.value = false;
     roundedContainerHorizontal.value = 0;
     roundedOpacity.value = 1.0;
+    isReachedCancel.value = false;
   }
 
   void onVerticalDragUpdate(details) {
@@ -575,6 +586,7 @@ class AnimationGlop extends State<StatefulWidget>
       isReachedLock.value = true;
       startColorAnimation();
       stopShackleAnimation();
+      _forwardRoundedContainerAnimation();
     }
     if (dyOffsetVerticalUpdate.value >= 0) {
       dyOffsetVerticalUpdate.value = 0;

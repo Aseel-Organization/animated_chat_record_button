@@ -1,11 +1,15 @@
 import 'dart:developer';
 
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 
 import 'package:animated_chat_record_button/animated_chat_record_button.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(DevicePreview(
+    enabled: true,
+    builder: (context) => const MyApp(),
+  ));
 }
 
 class MyApp extends StatefulWidget {
@@ -75,31 +79,38 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: isRecording ? 0 : 5,
-              child: AnimatedChatRecordButton(
-                onSend: (text) {
-                  setState(() {
-                    message = text;
-                    log('Message sent: $message');
-                  });
-                },
-                onLockedRecording: (doesLocked) {
-                  log('Locked recording: $doesLocked');
-                  setState(() {
-                    isRecording = doesLocked;
-                  });
-                },
-                textEditingController: textEditingController,
-                onRecordingEnd: (filePath) {
-                  setState(() {
-                    filePathW = filePath?.path;
-                    log('from plugin test ${filePathW.toString()}');
-                  });
-                },
+            AnimatedChatRecordButton(
+              config: RecordButtonConfig(
+                recordButtonSize: 45,
               ),
+              onPressEmoji: () {
+                log('Emoji button pressed');
+              },
+              onPressCamera: () {
+                log('Camera button pressed');
+              },
+              onPressAttachment: () {
+                log('Attachment button pressed');
+              },
+              onSend: (text) {
+                setState(() {
+                  message = text;
+                  log('Message sent: $message');
+                });
+              },
+              onLockedRecording: (doesLocked) {
+                log('Locked recording: $doesLocked');
+                setState(() {
+                  isRecording = doesLocked;
+                });
+              },
+              textEditingController: textEditingController,
+              onRecordingEnd: (filePath) {
+                setState(() {
+                  filePathW = filePath?.path;
+                  log('from plugin test ${filePathW.toString()}');
+                });
+              },
             ),
           ],
         ),

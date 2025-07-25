@@ -16,7 +16,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  device_preview: ^1.1.0
   animated_chat_record_button:
     # When depending on this package from a real application you should use:
     #   animated_chat_record_button: ^x.y.z

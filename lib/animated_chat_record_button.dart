@@ -110,18 +110,50 @@ class AnimatedChatRecordButton extends StatefulWidget {
   /// Callback when the recording is locked, providing a boolean indicating if it was locked successfully
   final Function(bool doesLocked)? onLockedRecording;
 
+  /// The position from the bottom of the screen where the button and the text form will be placed
+  final double bottomPosition;
+
+  /// Callbacks for camera button presses
+  final VoidCallback? onPressCamera;
+
+  /// Callbacks for  attachment button presses
+  final VoidCallback? onPressAttachment;
+
+  /// Callbacks for  emoji  button presses
+
+  final VoidCallback? onPressEmoji;
+
+  /// Color for the text form buttons
+  final Color? textFormButtonsColor;
+
+  /// Optional colors for the arrow
+  final Color arrowColor;
+
+  /// Optional colors for the lock icons animation
+  final Color lockColorFirst;
+
+  final Color lockColorSecond;
+
   /// Creates an instance of [AnimatedChatRecordButton]
-  const AnimatedChatRecordButton({
-    super.key,
-    this.config = const RecordButtonConfig(),
-    this.textEditingController,
-    this.recordingOutputPath,
-    required this.onRecordingEnd,
-    required this.onSend,
-    this.recordingContainerConfig,
-    this.onStartRecording,
-    this.onLockedRecording,
-  });
+
+  const AnimatedChatRecordButton(
+      {super.key,
+      this.config = const RecordButtonConfig(),
+      this.textEditingController,
+      this.recordingOutputPath,
+      required this.onRecordingEnd,
+      required this.onSend,
+      this.recordingContainerConfig,
+      this.onStartRecording,
+      this.onLockedRecording,
+      this.bottomPosition = 5,
+      this.onPressCamera,
+      this.onPressAttachment,
+      this.onPressEmoji,
+      this.textFormButtonsColor = const Color.fromARGB(255, 116, 116, 116),
+      this.arrowColor = Colors.grey,
+      this.lockColorFirst = Colors.grey,
+      this.lockColorSecond = Colors.black});
 
   /// Creates an instance of [AnimatedChatRecordButton] with a recording output path
   @override
@@ -160,7 +192,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       setState(() {
         _hasText = hasTextNow;
       });
-      log('Text field ${_hasText ? 'has text' : 'is empty'}');
     }
   }
 
@@ -170,6 +201,8 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     _audioHandlers = AudioHandlers();
 
     _animationController.initialize(
+      lockColorFirst: widget.lockColorFirst,
+      lockColorSecond: widget.lockColorSecond,
       roundedContainerHightt: widget.config.slideUpContainerHeight ?? 150,
       recordButtonSizeInit: widget.config.recordButtonSize,
       recordButtonScaleInit: widget.config.recordButtonScaleVal,
@@ -310,7 +343,22 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                                       dyOffsetVerticalUpdate,
                                 );
 
-                                return _buildMainContainer(screenSize, state);
+                                return Stack(
+                                  children: [
+                                    Positioned(
+                                      bottom: widget.bottomPosition,
+                                      child: _buildMainContainer(
+                                          screenSize, state),
+                                    ),
+                                    if (state.isReachedLock)
+                                      Positioned(
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        child: _buildLockedRecordingContainer(),
+                                      ),
+                                  ],
+                                );
                               },
                             ),
                           ),
@@ -336,11 +384,12 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
           _buildBackgroundContainer(screenSize.width, state.xAxisVal),
           if (!state.isReachedLock && !state.isMoving)
             _buildTextField(screenSize.width),
+
           _buildSlideUpContainer(state),
           if (state.isMoving)
             _buildSlideToCancelContainer(screenSize.width, state.xAxisVal),
           _buildRecordButton(state),
-          if (state.isReachedLock) _buildLockedRecordingContainer(),
+          // if (state.isReachedLock) _buildLockedRecordingContainer(),
         ],
       ),
     );
@@ -350,7 +399,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     return Positioned(
       bottom: 0,
       height: widget.config.recordButtonSize,
-      width: width - (xAxisValue.abs() + widget.config.slideUpContainerWidth),
+      width: width - (xAxisValue.abs() + _calculateContainersWidth()),
       child: Padding(
         padding: widget.config.containersPadding,
         child: Container(
@@ -368,19 +417,87 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   Widget _buildTextField(double screenWidth) {
     return Positioned(
       bottom: 0,
-      width: screenWidth - widget.config.slideUpContainerWidth,
-      height: widget.config.recordButtonSize,
-      child: Padding(
-        padding: widget.config.containersPadding,
-        child: CustomTextForm(
-          controller: widget.textEditingController,
-          boxFillColor: widget.config.textFormFieldBoxFillColor ?? Colors.white,
-          hinText: widget.config.textFormFieldHint ?? 'Message',
-          hintStyle: widget.config.textFormFieldHintStyle ??
-              TextStyle(color: Colors.grey[500], fontSize: 15),
-          contentPading:
-              const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-          border: widget.config.recordButtonSize,
+      child: SizedBox(
+        height: widget.config.recordButtonSize,
+        width: screenWidth - _calculateContainersWidth(),
+        child: Stack(
+          children: [
+            Positioned(
+              bottom: 0,
+              width: screenWidth - _calculateContainersWidth(),
+              height: widget.config.recordButtonSize,
+              child: Padding(
+                padding: widget.config.containersPadding,
+                child: CustomTextForm(
+                  controller: widget.textEditingController,
+                  boxFillColor:
+                      widget.config.textFormFieldBoxFillColor ?? Colors.white,
+                  hinText: widget.config.textFormFieldHint ?? 'Message',
+                  hintStyle: widget.config.textFormFieldHintStyle ??
+                      TextStyle(color: Colors.grey[500], fontSize: 15),
+                  contentPading:
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
+                  border: widget.config.recordButtonSize,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              top: 0,
+              right: 0,
+              child: InkWell(
+                onTap: widget.onPressCamera,
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+                child: SizedBox(
+                  width: 50,
+                  child: Icon(
+                    Icons.camera_alt_rounded,
+                    color: widget.textFormButtonsColor,
+                    size: 25,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              top: 0,
+              right: 50,
+              child: InkWell(
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+                onTap: widget.onPressAttachment,
+                child: SizedBox(
+                  width: 30,
+                  child: RotatedBox(
+                    quarterTurns: 1,
+                    child: Icon(
+                      Icons.attachment,
+                      color: widget.textFormButtonsColor,
+                      size: 25,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+                bottom: 0,
+                top: 0,
+                // right: 0,
+                left: 0,
+                child: SizedBox(
+                  width: 50,
+                  child: IconButton(
+                      highlightColor: Colors.transparent,
+                      splashColor: Colors.transparent,
+                      onPressed: widget.onPressEmoji,
+                      icon: Icon(
+                        Icons.emoji_emotions_rounded,
+                        color: widget.textFormButtonsColor,
+                        size: 25,
+                      )),
+                ))
+          ],
         ),
       ),
     );
@@ -413,6 +530,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                   scale: _animationController
                       .roundedVerticalContainerAnimation.value,
                   child: TopContainerSlider(
+                    arrowColor: widget.arrowColor,
                     animationGlop: _animationController,
                     containerColor: widget.config.slideUpContainerColor,
                   ),
@@ -423,6 +541,21 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
         },
       ),
     );
+  }
+
+  double _calculateContainersWidth() {
+    if (widget.config.slideUpContainerWidth > widget.config.recordButtonSize) {
+      return widget.config.slideUpContainerWidth + 5;
+    } else if (widget.config.recordButtonSize >
+        widget.config.slideUpContainerWidth) {
+      return widget.config.recordButtonSize + 5;
+    } else if (widget.config.slideUpContainerWidth ==
+        widget.config.recordButtonSize) {
+      return widget.config.slideUpContainerWidth + 5;
+      // ignore: curly_braces_in_flow_control_structures
+    } else {
+      return widget.config.slideUpContainerWidth + 5;
+    }
   }
 
   double _calculateContainerHeight(RecordButtonState state) {
@@ -544,17 +677,14 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   }
 
   Widget _buildLockedRecordingContainer() {
-    return Positioned(
-      bottom: 0,
-      child: RecordingContainer(
-        onStartRecording: (doestStartRecord) =>
-            widget.onStartRecording?.call(doestStartRecord),
-        onLockedRecording: (doesLocked) =>
-            widget.onLockedRecording?.call(doesLocked),
-        config: widget.recordingContainerConfig ?? RecordingContainerConfig(),
-        onRecordingEnd: widget.onRecordingEnd,
-        animationGlop: _animationController,
-      ),
+    return RecordingContainer(
+      onStartRecording: (doestStartRecord) =>
+          widget.onStartRecording?.call(doestStartRecord),
+      onLockedRecording: (doesLocked) =>
+          widget.onLockedRecording?.call(doesLocked),
+      config: widget.recordingContainerConfig ?? RecordingContainerConfig(),
+      onRecordingEnd: widget.onRecordingEnd,
+      animationGlop: _animationController,
     );
   }
 }
