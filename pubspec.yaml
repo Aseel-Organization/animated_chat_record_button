@@ -2,7 +2,7 @@ name: animated_chat_record_button
 description: "A beautiful and fully customizable WhatsApp-like animated recording button for Flutter applications. This package provides a smooth user experience with animated transitions, voice recording capabilities, and text input functionality."
 homepage: https://github.com/Vortex200000/animated_chat_record_button
 repository: https://github.com/Vortex200000/animated_chat_record_button
-version: 0.0.3
+version: 0.0.4
 
 environment:
   sdk: ^3.6.0
