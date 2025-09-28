@@ -11,12 +11,12 @@ import 'package:animated_chat_record_button/slide_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+
 /// Configuration class for styling the record button
 class RecordButtonConfig {
   final double? slideUpContainerHeight;
   final Color? slideUpContainerColor;
   final Color? firstRecordButtonColor;
-  final Color? secondRecordButtonColor;
   final Color? textFormFieldBoxFillColor;
   final String? textFormFieldHint;
   final TextStyle? textFormFieldStyle;
@@ -29,20 +29,19 @@ class RecordButtonConfig {
   final double recordButtonScaleVal;
   final double slideUpContainerWidth;
 
+  final Color? focusedBorderColor;
+  final Color? activeBorderColor;
+
   const RecordButtonConfig({
     this.slideUpContainerHeight,
     this.slideUpContainerColor,
     this.firstRecordButtonColor,
-    this.secondRecordButtonColor,
     this.textFormFieldBoxFillColor,
     this.textFormFieldHint,
     this.textFormFieldStyle,
     this.textFormFieldHintStyle,
     this.containersPadding = const EdgeInsets.only(left: 8),
-    this.firstRecordingButtonIcon = const Icon(
-      Icons.mic,
-      color: Colors.white,
-    ),
+    this.firstRecordingButtonIcon = const Icon(Icons.mic, color: Colors.white),
     this.secondRecordingButtonIcon = const Icon(
       Icons.send_rounded,
       color: Colors.white,
@@ -50,8 +49,12 @@ class RecordButtonConfig {
     this.recordButtonSize = 40,
     this.recordButtonScaleVal = 2.5,
     this.slideUpContainerWidth = 50,
-  }) : assert(recordButtonScaleVal >= 1.5 && recordButtonScaleVal <= 2.5,
-            'recordButtonScaleVal must be between 1.5 and 2.5 for better experience');
+    this.activeBorderColor,
+    this.focusedBorderColor,
+  }) : assert(
+  recordButtonScaleVal >= 1.5 && recordButtonScaleVal <= 2.5,
+  'recordButtonScaleVal must be between 1.5 and 2.5 for better experience',
+  );
 }
 
 /// State management for record button animations
@@ -135,26 +138,32 @@ class AnimatedChatRecordButton extends StatefulWidget {
 
   final Color lockColorSecond;
 
+  final bool showCameraButton;
+  final bool showEmojiButton;
+
   /// Creates an instance of [AnimatedChatRecordButton]
 
-  const AnimatedChatRecordButton(
-      {super.key,
-      this.config = const RecordButtonConfig(),
-      this.textEditingController,
-      this.recordingOutputPath,
-      required this.onRecordingEnd,
-      required this.onSend,
-      this.recordingContainerConfig,
-      this.onStartRecording,
-      this.onLockedRecording,
-      this.bottomPosition = 5,
-      this.onPressCamera,
-      this.onPressAttachment,
-      this.onPressEmoji,
-      this.textFormButtonsColor = const Color.fromARGB(255, 116, 116, 116),
-      this.arrowColor = Colors.grey,
-      this.lockColorFirst = Colors.grey,
-      this.lockColorSecond = Colors.black});
+  const AnimatedChatRecordButton({
+    super.key,
+    this.config = const RecordButtonConfig(),
+    this.textEditingController,
+    this.recordingOutputPath,
+    required this.onRecordingEnd,
+    required this.onSend,
+    this.recordingContainerConfig,
+    this.onStartRecording,
+    this.onLockedRecording,
+    this.bottomPosition = 5,
+    this.onPressCamera,
+    this.onPressAttachment,
+    this.onPressEmoji,
+    this.showCameraButton = false,
+    this.showEmojiButton = false,
+    this.textFormButtonsColor = const Color.fromARGB(255, 116, 116, 116),
+    this.arrowColor = Colors.grey,
+    this.lockColorFirst = Colors.grey,
+    this.lockColorSecond = Colors.black,
+  });
 
   /// Creates an instance of [AnimatedChatRecordButton] with a recording output path
   @override
@@ -197,26 +206,26 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     }
   }
 
-  void requestPermissions() async {
-    final PermissionStatus storagePermission =
-        await Permission.storage.request();
+  Future requestPermissions() async {
+    final PermissionStatus storagePermission = await Permission.storage
+        .request();
     final PermissionStatus mic = await Permission.microphone.request();
     ;
 
     if (storagePermission.isGranted) {
-      log("Storage permission granted");
+      log('Storage permission granted');
     } else if (storagePermission.isDenied) {
-      log("Storage permission denied. Requesting again...");
+      log('Storage permission denied. Requesting again...');
     } else if (storagePermission.isPermanentlyDenied) {
-      log("Storage permission permanently denied. Open settings.");
+      log('Storage permission permanently denied. Open settings.');
       await openAppSettings();
     }
 
     if (mic.isGranted) {
-      log("mic permission granted");
+      log('mic permission granted');
     }
     if (storagePermission.isGranted) {
-      log("notifications permission granted");
+      log('notifications permission granted');
     }
   }
 
@@ -291,9 +300,9 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       isHorizontalMoving: _animationController.isHorizontalMoving.value,
       roundedOpacity: _animationController.roundedOpacity.value,
       roundedContainerHorizontal:
-          _animationController.roundedContainerHorizontal.value,
+      _animationController.roundedContainerHorizontal.value,
       onHorizontalButtonScale:
-          _animationController.onHorizontalButtonScale.value,
+      _animationController.onHorizontalButtonScale.value,
       verticalScale: _animationController.verticalScale.value,
       roundedContainerVal: _animationController.roundedContainerVal.value,
       xAxisVal: _animationController.xAxisVal.value,
@@ -315,79 +324,89 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
         valueListenable: _animationController.roundedOpacity,
         builder: (context, roundedOpacity, child) => ValueListenableBuilder(
           valueListenable: _animationController.roundedContainerHorizontal,
-          builder: (context, roundedContainerHorizontal, child) =>
-              ValueListenableBuilder(
+          builder: (context, roundedContainerHorizontal, child) => ValueListenableBuilder(
             valueListenable: _animationController.isHorizontalMoving,
-            builder: (context, isHorizontalMoving, child) =>
-                ValueListenableBuilder(
+            builder: (context, isHorizontalMoving, child) => ValueListenableBuilder(
               valueListenable: _animationController.onHorizontalButtonScale,
-              builder: (context, onHorizontalButtonScale, child) =>
-                  ValueListenableBuilder(
+              builder: (context, onHorizontalButtonScale, child) => ValueListenableBuilder(
                 valueListenable: _animationController.isReachedLock,
-                builder: (context, isReachedLock, child) =>
-                    ValueListenableBuilder(
+                builder: (context, isReachedLock, child) => ValueListenableBuilder(
                   valueListenable: _animationController.verticalScale,
-                  builder: (context, verticalScale, child) =>
-                      ValueListenableBuilder(
+                  builder: (context, verticalScale, child) => ValueListenableBuilder(
                     valueListenable: _animationController.isMovingVertical,
                     builder: (context, isMovingVertical, child) =>
                         ValueListenableBuilder(
-                      valueListenable: _animationController.isMoving,
-                      builder: (context, isMoving, child) =>
-                          ValueListenableBuilder(
-                        valueListenable:
-                            _animationController.roundedContainerVal,
-                        builder: (context, roundedContainerVal, child) =>
-                            ValueListenableBuilder(
-                          valueListenable: _animationController.xAxisVal,
-                          builder: (context, xAxisVal, child) =>
-                              ValueListenableBuilder(
+                          valueListenable: _animationController.isMoving,
+                          builder: (context, isMoving, child) => ValueListenableBuilder(
                             valueListenable:
-                                _animationController.dyOffsetVerticalUpdate,
-                            builder: (context, dyOffsetVerticalUpdate, child) =>
-                                AnimatedBuilder(
-                              animation: _animationController.scaleAnimation,
-                              builder: (context, child) {
-                                final state = RecordButtonState(
-                                  isReachedCancel: isReachedCancel,
-                                  isReachedLock: isReachedLock,
-                                  isMoving: isMoving,
-                                  isMovingVertical: isMovingVertical,
-                                  isHorizontalMoving: isHorizontalMoving,
-                                  roundedOpacity: roundedOpacity,
-                                  roundedContainerHorizontal:
-                                      roundedContainerHorizontal,
-                                  onHorizontalButtonScale:
-                                      onHorizontalButtonScale,
-                                  verticalScale: verticalScale,
-                                  roundedContainerVal: roundedContainerVal,
-                                  xAxisVal: xAxisVal,
-                                  dyOffsetVerticalUpdate:
-                                      dyOffsetVerticalUpdate,
-                                );
+                            _animationController.roundedContainerVal,
+                            builder: (context, roundedContainerVal, child) =>
+                                ValueListenableBuilder(
+                                  valueListenable:
+                                  _animationController.xAxisVal,
+                                  builder: (context, xAxisVal, child) =>
+                                      ValueListenableBuilder(
+                                        valueListenable: _animationController
+                                            .dyOffsetVerticalUpdate,
+                                        builder:
+                                            (
+                                            context,
+                                            dyOffsetVerticalUpdate,
+                                            child,
+                                            ) => AnimatedBuilder(
+                                          animation: _animationController
+                                              .scaleAnimation,
+                                          builder: (context, child) {
+                                            final state = RecordButtonState(
+                                              isReachedCancel:
+                                              isReachedCancel,
+                                              isReachedLock: isReachedLock,
+                                              isMoving: isMoving,
+                                              isMovingVertical:
+                                              isMovingVertical,
+                                              isHorizontalMoving:
+                                              isHorizontalMoving,
+                                              roundedOpacity:
+                                              roundedOpacity,
+                                              roundedContainerHorizontal:
+                                              roundedContainerHorizontal,
+                                              onHorizontalButtonScale:
+                                              onHorizontalButtonScale,
+                                              verticalScale: verticalScale,
+                                              roundedContainerVal:
+                                              roundedContainerVal,
+                                              xAxisVal: xAxisVal,
+                                              dyOffsetVerticalUpdate:
+                                              dyOffsetVerticalUpdate,
+                                            );
 
-                                return Stack(
-                                  children: [
-                                    Positioned(
-                                      bottom: widget.bottomPosition,
-                                      child: _buildMainContainer(
-                                          screenSize, state),
-                                    ),
-                                    if (state.isReachedLock)
-                                      Positioned(
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        child: _buildLockedRecordingContainer(),
+                                            return Stack(
+                                              children: [
+                                                Positioned(
+                                                  bottom:
+                                                  widget.bottomPosition,
+                                                  child:
+                                                  _buildMainContainer(
+                                                    screenSize,
+                                                    state,
+                                                  ),
+                                                ),
+                                                if (state.isReachedLock)
+                                                  Positioned(
+                                                    bottom: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    child:
+                                                    _buildLockedRecordingContainer(),
+                                                  ),
+                                              ],
+                                            );
+                                          },
+                                        ),
                                       ),
-                                  ],
-                                );
-                              },
-                            ),
+                                ),
                           ),
                         ),
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -430,7 +449,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
           height: widget.config.recordButtonSize,
           decoration: BoxDecoration(
             color: widget.config.textFormFieldBoxFillColor ?? Colors.white,
-            borderRadius: BorderRadius.circular(50),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
@@ -454,38 +473,44 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                 child: CustomTextForm(
                   controller: widget.textEditingController,
                   boxFillColor:
-                      widget.config.textFormFieldBoxFillColor ?? Colors.white,
+                  widget.config.textFormFieldBoxFillColor ?? Colors.white,
                   hinText: widget.config.textFormFieldHint ?? 'Message',
-                  hintStyle: widget.config.textFormFieldHintStyle ??
+                  hintStyle:
+                  widget.config.textFormFieldHintStyle ??
                       TextStyle(color: Colors.grey[500], fontSize: 15),
-                  contentPading:
-                      const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
-                  border: widget.config.recordButtonSize,
+                  contentPading:  EdgeInsets.symmetric(
+                    vertical: 5,
+                    horizontal: widget.showEmojiButton ? 30 : 10,
+                  ),
+                  border: 10,
+                  focusedBorderColor: widget.config.focusedBorderColor,
+                  activeBorderColor: widget.config.activeBorderColor,
                 ),
               ),
             ),
-            Positioned(
-              bottom: 0,
-              top: 0,
-              right: 0,
-              child: InkWell(
-                onTap: widget.onPressCamera,
-                highlightColor: Colors.transparent,
-                splashColor: Colors.transparent,
-                child: SizedBox(
-                  width: 50,
-                  child: Icon(
-                    Icons.camera_alt_rounded,
-                    color: widget.textFormButtonsColor,
-                    size: 25,
+            if (widget.showCameraButton)
+              Positioned(
+                bottom: 0,
+                top: 0,
+                right: 0,
+                child: InkWell(
+                  onTap: widget.onPressCamera,
+                  highlightColor: Colors.transparent,
+                  splashColor: Colors.transparent,
+                  child: SizedBox(
+                    width: 50,
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: widget.textFormButtonsColor,
+                      size: 25,
+                    ),
                   ),
                 ),
               ),
-            ),
             Positioned(
               bottom: 0,
               top: 0,
-              right: 50,
+              right: widget.showCameraButton ? 50 : 5,
               child: InkWell(
                 highlightColor: Colors.transparent,
                 splashColor: Colors.transparent,
@@ -503,7 +528,8 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                 ),
               ),
             ),
-            Positioned(
+            if (widget.showEmojiButton)
+              Positioned(
                 bottom: 0,
                 top: 0,
                 // right: 0,
@@ -511,15 +537,17 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                 child: SizedBox(
                   width: 50,
                   child: IconButton(
-                      highlightColor: Colors.transparent,
-                      splashColor: Colors.transparent,
-                      onPressed: widget.onPressEmoji,
-                      icon: Icon(
-                        Icons.emoji_emotions_rounded,
-                        color: widget.textFormButtonsColor,
-                        size: 25,
-                      )),
-                ))
+                    highlightColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    onPressed: widget.onPressEmoji,
+                    icon: Icon(
+                      Icons.emoji_emotions_rounded,
+                      color: widget.textFormButtonsColor,
+                      size: 25,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -551,7 +579,8 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                 ),
                 child: Transform.scale(
                   scale: _animationController
-                      .roundedVerticalContainerAnimation.value,
+                      .roundedVerticalContainerAnimation
+                      .value,
                   child: TopContainerSlider(
                     arrowColor: widget.arrowColor,
                     animationGlop: _animationController,
@@ -585,9 +614,11 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     if (state.isHorizontalMoving &&
         state.roundedContainerHorizontal.abs() > 0.6) {
       return (_animationController.roundedContainerHight +
-              state.roundedContainerHorizontal)
-          .clamp(widget.config.recordButtonSize,
-              _animationController.roundedContainerHight);
+          state.roundedContainerHorizontal)
+          .clamp(
+        widget.config.recordButtonSize,
+        _animationController.roundedContainerHight,
+      );
     }
 
     if (!state.isMovingVertical &&
@@ -596,15 +627,18 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     }
 
     return (_animationController.roundedContainerHight +
-            state.roundedContainerVal * 1.2)
-        .clamp(widget.config.slideUpContainerWidth,
-            _animationController.roundedContainerHight);
+        state.roundedContainerVal * 1.2)
+        .clamp(
+      widget.config.slideUpContainerWidth,
+      _animationController.roundedContainerHight,
+    );
   }
 
   Widget _buildSlideToCancelContainer(double screenWidth, double xAxisValue) {
     return Positioned(
       bottom: 0,
-      width: screenWidth -
+      width:
+      screenWidth -
           (xAxisValue.abs() + widget.config.slideUpContainerWidth),
       height: widget.config.recordButtonSize,
       child: StaggeredSlideIn(
@@ -612,9 +646,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
         duration: const Duration(milliseconds: 100),
         child: Padding(
           padding: widget.config.containersPadding,
-          child: SlideToCancelContainer(
-            animationGlop: _animationController,
-          ),
+          child: SlideToCancelContainer(animationGlop: _animationController),
         ),
       ),
     );
@@ -629,61 +661,70 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
         child: Center(
           child: _hasText
               ? InkWell(
-                  onTap: () {
-                    widget.onSend(widget.textEditingController?.text ?? '');
-                    widget.textEditingController?.clear();
-                  },
+            onTap: () {
+              widget.onSend(widget.textEditingController?.text ?? '');
+              widget.textEditingController?.clear();
+            },
+            child: Container(
+              width: widget.config.recordButtonSize,
+              height: widget.config.recordButtonSize,
+              decoration: BoxDecoration(
+                color:
+                widget.config.firstRecordButtonColor ?? Colors.black,
+                shape: BoxShape.circle,
+              ),
+              child: widget
+                  .config
+                  .secondRecordingButtonIcon, // Mic icon when no text
+            ),
+          )
+              : GestureDetector(
+            onPanDown: (_) => _handleRecordingStart(),
+            onPanUpdate: state.isReachedLock
+                ? null
+                : (details) {
+              _animationController.onPanUpdate(details);
+            },
+            onPanEnd: (details) {
+              _handleRecordingEnd(
+                state.isReachedLock,
+                state.isReachedCancel,
+              );
+              _animationController.onPanEnd(details);
+            },
+            onPanCancel: () {
+              _animationController.reverseAnimation();
+              _handleRecordingEnd(
+                state.isReachedLock,
+                state.isReachedCancel,
+              );
+            },
+            child: Opacity(
+              opacity: state.isReachedLock ? 0 : 1,
+              child: Transform.translate(
+                offset: Offset(
+                  state.xAxisVal,
+                  state.dyOffsetVerticalUpdate,
+                ),
+                child: Transform.scale(
+                  scale: _calculateButtonScale(state),
                   child: Container(
                     width: widget.config.recordButtonSize,
                     height: widget.config.recordButtonSize,
                     decoration: BoxDecoration(
-                      color:
-                          widget.config.firstRecordButtonColor ?? Colors.black,
-                      shape: BoxShape.circle,
+                        color:
+                        widget.config.firstRecordButtonColor ??
+                            Colors.black,
+                        borderRadius: BorderRadius.circular(10)
                     ),
-                    child: widget.config
-                        .secondRecordingButtonIcon, // Mic icon when no text
-                  ),
-                )
-              : GestureDetector(
-                  onPanDown: (_) => _handleRecordingStart(),
-                  onPanUpdate: state.isReachedLock
-                      ? null
-                      : (details) {
-                          _animationController.onPanUpdate(details);
-                        },
-                  onPanEnd: (details) {
-                    _handleRecordingEnd(
-                        state.isReachedLock, state.isReachedCancel);
-                    _animationController.onPanEnd(details);
-                  },
-                  onPanCancel: () {
-                    _animationController.reverseAnimation();
-                    _handleRecordingEnd(
-                        state.isReachedLock, state.isReachedCancel);
-                  },
-                  child: Opacity(
-                    opacity: state.isReachedLock ? 0 : 1,
-                    child: Transform.translate(
-                      offset:
-                          Offset(state.xAxisVal, state.dyOffsetVerticalUpdate),
-                      child: Transform.scale(
-                        scale: _calculateButtonScale(state),
-                        child: Container(
-                          width: widget.config.recordButtonSize,
-                          height: widget.config.recordButtonSize,
-                          decoration: BoxDecoration(
-                            color: widget.config.firstRecordButtonColor ??
-                                Colors.black,
-                            shape: BoxShape.circle,
-                          ),
-                          child: widget.config
-                              .firstRecordingButtonIcon, // Mic icon when no text
-                        ),
-                      ),
-                    ),
+                    child: widget
+                        .config
+                        .firstRecordingButtonIcon, // Mic icon when no text
                   ),
                 ),
+              ),
+            ),
+          ),
         ),
       ),
     );

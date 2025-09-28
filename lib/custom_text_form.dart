@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
 
+
 class CustomTextForm extends StatefulWidget {
   const CustomTextForm({
     super.key,
@@ -26,6 +27,8 @@ class CustomTextForm extends StatefulWidget {
     this.enteredTextStyle,
     this.onChanged,
     this.onSupmit,
+    this.activeBorderColor,
+    this.focusedBorderColor,
   });
   final bool isPasss;
 
@@ -50,6 +53,8 @@ class CustomTextForm extends StatefulWidget {
   final TextStyle? enteredTextStyle;
   final Function(String)? onChanged;
   final Function(String)? onSupmit;
+  final Color? activeBorderColor;
+  final Color? focusedBorderColor;
 
   @override
   State<CustomTextForm> createState() => _CustomTextFormState();
@@ -100,30 +105,37 @@ class _CustomTextFormState extends State<CustomTextForm> {
       autofocus: widget.autoFocus,
       enableSuggestions: true,
 
-
-      decoration: widget.inputDecoration ??
+      decoration:
+      widget.inputDecoration ??
           InputDecoration(
-              contentPadding: widget.contentPading ??
-                  const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              filled: true,
-              suffixIcon: widget.suffixIcon,
-              fillColor: widget.boxFillColor,
-              prefixIcon: widget.preffixIcon,
-              errorMaxLines: 1,
-              hintText: widget.hinText,
-              hintStyle: widget.hintStyle ??
-                  const TextStyle(
-                    color: Colors.grey,
-                  ),
-              prefixIconConstraints: const BoxConstraints(
-                minHeight: 20,
-                minWidth: 40,
-              ),
-              // counterStyle: TextStyle(color: Colors.blue),
-              border: OutlineInputBorder(
-                borderSide: BorderSide.none,
-                borderRadius: BorderRadius.circular(widget.border),
-              )),
+            contentPadding:
+            widget.contentPading ??
+                const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+            filled: true,
+            suffixIcon: widget.suffixIcon,
+            fillColor: widget.boxFillColor,
+            prefixIcon: widget.preffixIcon,
+            errorMaxLines: 1,
+            hintText: widget.hinText,
+            hintStyle: widget.hintStyle ?? const TextStyle(color: Colors.grey),
+            prefixIconConstraints: const BoxConstraints(
+              minHeight: 20,
+              minWidth: 40,
+            ),
+            // counterStyle: TextStyle(color: Colors.blue),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(widget.border),
+              borderSide: BorderSide(color: widget.activeBorderColor ?? Colors.grey, width: 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(widget.border),
+              borderSide: BorderSide(color: widget.focusedBorderColor ?? Colors.grey, width: 1.0),
+            ),
+            border: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(widget.border),
+            ),
+          ),
     );
   }
 }
@@ -201,36 +213,41 @@ class _PasswordTextFormState extends State<PasswordTextForm> {
       cursorRadius: Radius.circular(widget.cursorRadius),
       autofocus: widget.autoFocus,
       enableSuggestions: true,
-      decoration: widget.inputDecoration ??
+      decoration:
+      widget.inputDecoration ??
           InputDecoration(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              filled: true,
-              suffixIcon: Padding(
-                padding: EdgeInsets.only(right: 25),
-                child: InkWell(
-                    onTap: () {
-                      _see
-                          ? setState(() {
-                              _see = false;
-                            })
-                          : setState(() {
-                              _see = true;
-                            });
-                    },
-                    child: _see
-                        ? const Icon(Icons.visibility_off)
-                        : const Icon(Icons.visibility)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 15,
+              vertical: 10,
+            ),
+            filled: true,
+            suffixIcon: Padding(
+              padding: EdgeInsets.only(right: 25),
+              child: InkWell(
+                onTap: () {
+                  _see
+                      ? setState(() {
+                    _see = false;
+                  })
+                      : setState(() {
+                    _see = true;
+                  });
+                },
+                child: _see
+                    ? const Icon(Icons.visibility_off)
+                    : const Icon(Icons.visibility),
               ),
-              fillColor: widget.boxFillColor,
-              errorMaxLines: 1,
-              hintText: widget.hinText,
-              hintStyle: const TextStyle(color: Colors.grey),
-              // counterStyle: TextStyle(color: Colors.blue),
-              border: OutlineInputBorder(
-                borderSide: BorderSide.none,
-                borderRadius: BorderRadius.circular(widget.border),
-              )),
+            ),
+            fillColor: widget.boxFillColor,
+            errorMaxLines: 1,
+            hintText: widget.hinText,
+            hintStyle: const TextStyle(color: Colors.grey),
+            // counterStyle: TextStyle(color: Colors.blue),
+            border: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(widget.border),
+            ),
+          ),
     );
   }
 }
