@@ -69,9 +69,13 @@ class _RecordingContainerState extends State<RecordingContainer> {
     return ValueListenableBuilder(
       valueListenable: widget.animationGlop.secondsElapsed,
       builder: (context, value, child) => Container(
-        color: widget.config.recordContainerColor,
         width: screenWidth,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: widget.config.recordContainerColor,
+          borderRadius: BorderRadius.circular(8)
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
