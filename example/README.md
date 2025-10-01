@@ -1,6 +1,6 @@
-# animated_chat_record_button_example
+# example
 
-Demonstrates how to use the animated_chat_record_button plugin.
+A new Flutter project.
 
 ## Getting Started
 

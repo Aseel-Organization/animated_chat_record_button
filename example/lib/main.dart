@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:animated_chat_record_button/configs/record_button_config.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 
