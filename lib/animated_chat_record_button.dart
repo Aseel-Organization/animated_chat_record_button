@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:animated_chat_record_button/animations.dart';
 import 'package:animated_chat_record_button/custom_text_form.dart';
 import 'package:animated_chat_record_button/file_handle.dart';
+import 'package:animated_chat_record_button/audio_services.dart';
 import 'package:animated_chat_record_button/recoding_container.dart';
 import 'package:animated_chat_record_button/secondary_recording_container.dart';
 import 'package:animated_chat_record_button/slide_animation.dart';
@@ -66,6 +67,14 @@ class AnimatedChatRecordButton extends StatefulWidget {
   final bool showCameraButton;
   final bool showEmojiButton;
 
+  /// Optional maximum duration for a single recording. If provided,
+  /// recording will automatically stop once this duration is reached.
+  final Duration? maxDuration;
+
+  /// Minimum duration for a recording to be considered valid.
+  /// Recordings shorter than this will be discarded. Default: 2 seconds.
+  final Duration minDuration;
+
   /// Creates an instance of [AnimatedChatRecordButton]
 
   const AnimatedChatRecordButton({
@@ -88,6 +97,8 @@ class AnimatedChatRecordButton extends StatefulWidget {
     this.arrowColor = Colors.grey,
     this.lockColorFirst = Colors.grey,
     this.lockColorSecond = Colors.black,
+    this.maxDuration,
+    this.minDuration = const Duration(seconds: 2),
   });
 
   /// Creates an instance of [AnimatedChatRecordButton] with a recording output path
@@ -100,6 +111,8 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     with TickerProviderStateMixin {
   late AnimationGlop _animationController;
   bool _hasText = false;
+  bool _hasAutoStopped = false;
+  int _lastRecordingSeconds = 0;
 
   @override
   void initState() {
@@ -108,6 +121,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
 
     _initializeControllers();
     _setupTextListener();
+    _setupMaxDurationListener();
   }
 
   /// Sets up a listener for the text field to update the state when text changes
@@ -117,6 +131,56 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       _hasText = widget.textEditingController!.text.isNotEmpty;
       // Add listener
       widget.textEditingController!.addListener(_onTextChanged);
+    }
+  }
+
+  void _setupMaxDurationListener() {
+    if (widget.maxDuration == null) return;
+    _animationController.secondsElapsed.addListener(_onSecondsTick);
+  }
+
+  void _onSecondsTick() {
+    if (widget.maxDuration == null) return;
+    if (_hasAutoStopped) return;
+    final elapsed = _animationController.secondsElapsed.value;
+    if (elapsed >= widget.maxDuration!.inSeconds && elapsed > 0) {
+      _hasAutoStopped = true;
+      _onMaxDurationReached();
+    }
+  }
+
+  Future<void> _onMaxDurationReached() async {
+    try {
+      final elapsed = _animationController.secondsElapsed.value;
+      _animationController.reverseAnimation();
+      _animationController.stopTimer();
+      _animationController.stopMicFade();
+
+      // If locked UI is active, stop visualizer and close it
+      if (_animationController.isReachedLock.value) {
+        await _animationController.audioHandlers.stopVisualizer();
+      }
+
+      final result = await _animationController.audioHandlers.stopRecording();
+      if (elapsed < widget.minDuration.inSeconds) {
+        if (result != null) {
+          await deleteFile(result);
+        }
+      } else {
+        widget.onRecordingEnd(result);
+      }
+      widget.onStartRecording?.call(false);
+
+      if (_animationController.isReachedLock.value) {
+        // Dismiss locked recording container
+        _animationController.amplitudesController = [];
+        _animationController.shouldStartVisualizer.value = false;
+        _animationController.toggleLock();
+        widget.onLockedRecording?.call(false);
+      }
+    } finally {
+      // Reset flag after a brief delay to allow new recordings
+      Future.microtask(() => _hasAutoStopped = false);
     }
   }
 
@@ -172,12 +236,24 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     if (widget.textEditingController != null) {
       widget.textEditingController!.removeListener(_onTextChanged);
     }
+    if (widget.maxDuration != null) {
+      _animationController.secondsElapsed.removeListener(_onSecondsTick);
+    }
     _animationController.dispose();
     super.dispose();
   }
 
   Future<void> _stopRecording() async {
     final result = await _animationController.audioHandlers.stopRecording();
+    final elapsed = _lastRecordingSeconds;
+    _lastRecordingSeconds = 0;
+    final minSecs = widget.minDuration.inSeconds;
+    if (elapsed > 0 && elapsed < minSecs) {
+      if (result != null) {
+        await deleteFile(result);
+      }
+      return;
+    }
     widget.onRecordingEnd(result);
   }
 
@@ -195,6 +271,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     _animationController.reverseAnimation();
 
     if (!isLocked && !isCanceled) {
+      _lastRecordingSeconds = _animationController.secondsElapsed.value;
       _animationController.stopTimer();
       _stopRecording();
       _animationController.stopMicFade();
@@ -555,7 +632,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       child: SizedBox(
         width: widget.config.slideUpContainerWidth,
         child: Center(
-          child: _buildOnlyRecordButton(state, _hasText),
+          child: _buildSendOrRecordButton(state, _hasText),
         ),
       ),
     );
@@ -578,30 +655,24 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       onLockedRecording: (doesLocked) =>
           widget.onLockedRecording?.call(doesLocked),
       config: widget.recordingContainerConfig ?? RecordingContainerConfig(),
-      onRecordingEnd: widget.onRecordingEnd,
+      onRecordingEnd: (file) async {
+        // Validate using actual file duration to avoid timer drift in locked flow
+        if (file != null) {
+          final audioService = AudioPlayersService();
+          final dur = await audioService.getDurationForFile(file.path);
+          final secs = dur?.inSeconds ?? 0;
+          if (secs < widget.minDuration.inSeconds) {
+            await deleteFile(file);
+            return;
+          }
+        }
+        widget.onRecordingEnd(file);
+      },
       animationGlop: _animationController,
     );
   }
 
-  Widget _buildSendButton() {
-    return InkWell(
-      onTap: () {
-        widget.onSend(widget.textEditingController?.text ?? '');
-        widget.textEditingController?.clear();
-      },
-      child: Container(
-        width: widget.config.recordButtonSize,
-        height: widget.config.recordButtonSize,
-        decoration: BoxDecoration(
-          color: widget.config.firstRecordButtonColor ?? Colors.black,
-          shape: BoxShape.circle,
-        ),
-        child: widget.config.secondRecordingButtonIcon, // Mic icon when no text
-      ),
-    );
-  }
-
-  _buildOnlyRecordButton(RecordButtonState state, bool hasText) {
+  _buildSendOrRecordButton(RecordButtonState state, bool hasText) {
     return GestureDetector(
       onTap: hasText
           ? () {
