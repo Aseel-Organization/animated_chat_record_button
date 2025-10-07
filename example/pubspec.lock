@@ -350,6 +350,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.16.0"
+  mic_info:
+    dependency: transitive
+    description:
+      name: mic_info
+      sha256: ab53d198b82cd1faea9dc9a0d32dea967ef91257f193ffee36a41866bb42e844
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
   nested:
     dependency: transitive
     description:

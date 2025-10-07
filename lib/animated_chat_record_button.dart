@@ -10,6 +10,7 @@ import 'package:animated_chat_record_button/secondary_recording_container.dart';
 import 'package:animated_chat_record_button/slide_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:mic_info/mic_info.dart';
 
 import 'configs/record_button_config.dart';
 import 'configs/record_button_state.dart';
@@ -39,6 +40,9 @@ class AnimatedChatRecordButton extends StatefulWidget {
 
   /// Callback when the recording is locked, providing a boolean indicating if it was locked successfully
   final Function(bool doesLocked)? onLockedRecording;
+
+  /// Callback when microphone is already in use by another app
+  final VoidCallback? onMicUsed;
 
   /// The position from the bottom of the screen where the button and the text form will be placed
   final double bottomPosition;
@@ -87,6 +91,7 @@ class AnimatedChatRecordButton extends StatefulWidget {
     this.recordingContainerConfig,
     this.onStartRecording,
     this.onLockedRecording,
+    this.onMicUsed,
     this.bottomPosition = 5,
     this.onPressCamera,
     this.onPressAttachment,
@@ -257,7 +262,18 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     widget.onRecordingEnd(result);
   }
 
-  void _handleRecordingStart() {
+  Future<void> _handleRecordingStart() async {
+    // Check if mic is currently in use, if so notify and abort
+    try {
+      final activeMics = await MicInfo.getActiveMicrophones();
+      if (activeMics.isNotEmpty) {
+        widget.onMicUsed?.call();
+        return;
+      }
+    } catch (_) {
+      // If the check fails, proceed to attempt recording as a fallback
+    }
+
     _animationController.startAnimation();
     _animationController.startTimerRecord();
     _animationController.startMicFade();
