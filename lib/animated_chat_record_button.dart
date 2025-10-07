@@ -268,6 +268,10 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       final activeMics = await MicInfo.getActiveMicrophones();
       if (activeMics.isNotEmpty) {
         widget.onMicUsed?.call();
+
+        _animationController.stopMicFade();
+        _animationController.stopTimer();
+        deleteOnCancel(_animationController.audioHandlers);
         return;
       }
     } catch (_) {
