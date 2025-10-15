@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:animated_chat_record_button/animations.dart';
@@ -118,6 +119,8 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   bool _hasText = false;
   bool _hasAutoStopped = false;
   int _lastRecordingSeconds = 0;
+  Timer? _holdToShowLockTimer;
+  bool _isRecordingActive = false;
 
   @override
   void initState() {
@@ -167,6 +170,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       }
 
       final result = await _animationController.audioHandlers.stopRecording();
+      _isRecordingActive = false;
       if (elapsed < widget.minDuration.inSeconds) {
         if (result != null) {
           await deleteFile(result);
@@ -252,6 +256,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     final result = await _animationController.audioHandlers.stopRecording();
     final elapsed = _lastRecordingSeconds;
     _lastRecordingSeconds = 0;
+    _isRecordingActive = false;
     final minSecs = widget.minDuration.inSeconds;
     if (elapsed > 0 && elapsed < minSecs) {
       if (result != null) {
@@ -262,7 +267,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     widget.onRecordingEnd(result);
   }
 
-  Future<void> _handleRecordingStart() async {
+  Future<void> _handleRecordingStart({bool fromTap = false}) async {
     // Check if mic is currently in use, if so notify and abort
     try {
       final activeMics = await MicInfo.getActiveMicrophones();
@@ -278,16 +283,28 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       // If the check fails, proceed to attempt recording as a fallback
     }
 
-    _animationController.startAnimation();
-    _animationController.startTimerRecord();
-    _animationController.startMicFade();
+    if (fromTap) {
+      // Start without showing lock animated view, but show recording view
+      _animationController.isReachedLock.value = true;
+      _animationController.isMoving.value = false;
+      _animationController.shouldStartVisualizer.value = true;
+      _animationController.startTimerRecord();
+    } else {
+      _animationController.startAnimation();
+      _animationController.startTimerRecord();
+      _animationController.startMicFade();
+    }
     _animationController.audioHandlers.startRecording(
       filePath: widget.recordingOutputPath,
     );
+    _isRecordingActive = true;
     widget.onStartRecording?.call(true);
   }
 
   void _handleRecordingEnd(bool isLocked, bool isCanceled) {
+    if (!_isRecordingActive) {
+      return;
+    }
     _animationController.reverseAnimation();
 
     if (!isLocked && !isCanceled) {
@@ -307,6 +324,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       _animationController.stopMicFade();
       _animationController.stopTimer();
       deleteOnCancel(_animationController.audioHandlers);
+      _isRecordingActive = false;
     }
   }
 
@@ -694,13 +712,39 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
 
   _buildSendOrRecordButton(RecordButtonState state, bool hasText) {
     return GestureDetector(
+      onTapDown: hasText
+          ? null
+          : (_) {
+              // Start a 1s timer to show lock animation + start recording if user holds
+              _holdToShowLockTimer?.cancel();
+              _holdToShowLockTimer = Timer(const Duration(milliseconds: 100), () async {
+                // If user hasn't started moving or locked via tap yet, start hold flow
+                if (!_animationController.isMoving.value &&
+                    !_animationController.isReachedLock.value) {
+                  await _handleRecordingStart();
+                }
+              });
+            },
       onTap: hasText
           ? () {
               widget.onSend(widget.textEditingController?.text ?? '');
               widget.textEditingController?.clear();
             }
-          : null,
-      onPanDown: hasText ? null : (_) => _handleRecordingStart(),
+          : () async {
+              // Cancel pending hold timer; this is a tap
+              _holdToShowLockTimer?.cancel();
+              // Simple tap should start recording without showing lock animation
+              if (!_animationController.isReachedLock.value) {
+                await _handleRecordingStart(fromTap: true);
+              }
+            },
+      onPanStart: hasText
+          ? null
+          : (_) {
+              // Drag started, cancel any pending long-hold timer and start hold recording
+              _holdToShowLockTimer?.cancel();
+              _handleRecordingStart();
+            },
       onPanUpdate: hasText
           ? null
           : state.isReachedLock
@@ -711,6 +755,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       onPanEnd: hasText
           ? null
           : (details) {
+              _holdToShowLockTimer?.cancel();
               _handleRecordingEnd(
                 state.isReachedLock,
                 state.isReachedCancel,
@@ -720,6 +765,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       onPanCancel: hasText
           ? null
           : () {
+              _holdToShowLockTimer?.cancel();
               _animationController.reverseAnimation();
               _handleRecordingEnd(
                 state.isReachedLock,
