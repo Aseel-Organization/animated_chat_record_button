@@ -271,7 +271,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     // Check if mic is currently in use, if so notify and abort
     try {
       final activeMics = await MicInfo.getActiveMicrophones();
-      if (activeMics.isNotEmpty) {
+      if (Platform.isIOS && activeMics.length > 1 || Platform.isAndroid && activeMics.isNotEmpty) {
         widget.onMicUsed?.call();
 
         _animationController.stopMicFade();
