@@ -743,7 +743,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
           : (_) {
               // Drag started, cancel any pending long-hold timer and start hold recording
               _holdToShowLockTimer?.cancel();
-              _handleRecordingStart();
             },
       onPanUpdate: hasText
           ? null
