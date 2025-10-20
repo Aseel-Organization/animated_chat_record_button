@@ -121,7 +121,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   int _lastRecordingSeconds = 0;
   Timer? _holdToShowLockTimer;
   bool _isRecordingActive = false;
-  bool _isInRecordingSession = false;
 
   @override
   void initState() {
@@ -172,7 +171,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
 
       final result = await _animationController.audioHandlers.stopRecording();
       _isRecordingActive = false;
-      _isInRecordingSession = false;
       if (elapsed < widget.minDuration.inSeconds) {
         if (result != null) {
           await deleteFile(result);
@@ -259,7 +257,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
     final elapsed = _lastRecordingSeconds;
     _lastRecordingSeconds = 0;
     _isRecordingActive = false;
-    _isInRecordingSession = false;
     final minSecs = widget.minDuration.inSeconds;
     if (elapsed > 0 && elapsed < minSecs) {
       if (result != null) {
@@ -271,21 +268,19 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   }
 
   Future<void> _handleRecordingStart({bool fromTap = false}) async {
-    // Only check mic usage when starting a new recording session
-    if (!_isInRecordingSession) {
-      try {
-        final activeMics = await MicInfo.getActiveMicrophones();
-        if (Platform.isIOS && activeMics.length > 1 || Platform.isAndroid && activeMics.isNotEmpty) {
-          widget.onMicUsed?.call();
+    // Check if mic is currently in use, if so notify and abort
+    try {
+      final activeMics = await MicInfo.getActiveMicrophones();
+      if (Platform.isIOS && activeMics.length > 1 || Platform.isAndroid && activeMics.isNotEmpty) {
+        widget.onMicUsed?.call();
 
-          _animationController.stopMicFade();
-          _animationController.stopTimer();
-          deleteOnCancel(_animationController.audioHandlers);
-          return;
-        }
-      } catch (_) {
-        // If the check fails, proceed to attempt recording as a fallback
+        _animationController.stopMicFade();
+        _animationController.stopTimer();
+        deleteOnCancel(_animationController.audioHandlers);
+        return;
       }
+    } catch (_) {
+      // If the check fails, proceed to attempt recording as a fallback
     }
 
     if (fromTap) {
@@ -303,7 +298,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       filePath: widget.recordingOutputPath,
     );
     _isRecordingActive = true;
-    _isInRecordingSession = true;
     widget.onStartRecording?.call(true);
   }
 
@@ -331,7 +325,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       _animationController.stopTimer();
       deleteOnCancel(_animationController.audioHandlers);
       _isRecordingActive = false;
-      _isInRecordingSession = false;
     }
   }
 
