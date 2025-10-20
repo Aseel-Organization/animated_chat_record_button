@@ -81,7 +81,7 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
             AnimatedChatRecordButton(
-              maxDuration: Duration(seconds: 5),
+              maxDuration: Duration(minutes: 5),
               config: RecordButtonConfig(
                 recordButtonSize: 45,
               ),
