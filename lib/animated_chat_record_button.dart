@@ -109,7 +109,7 @@ class AnimatedChatRecordButton extends StatefulWidget {
     this.lockColorSecond = Colors.black,
     this.maxDuration,
     this.minDuration = const Duration(seconds: 2),
-    this.recordingEnabled = true,
+    this.recordingEnabled = false,
   });
 
   /// Creates an instance of [AnimatedChatRecordButton] with a recording output path
