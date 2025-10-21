@@ -81,7 +81,7 @@ class AnimatedChatRecordButton extends StatefulWidget {
   final Duration minDuration;
 
   /// Whether recording functionality is enabled. When false, users can only type and send text messages.
-  /// Default: true.
+  /// Default: false.
   final bool recordingEnabled;
 
   /// Creates an instance of [AnimatedChatRecordButton]
