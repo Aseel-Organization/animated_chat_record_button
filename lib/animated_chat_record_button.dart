@@ -80,6 +80,10 @@ class AnimatedChatRecordButton extends StatefulWidget {
   /// Recordings shorter than this will be discarded. Default: 2 seconds.
   final Duration minDuration;
 
+  /// Whether recording functionality is enabled. When false, users can only type and send text messages.
+  /// Default: true.
+  final bool recordingEnabled;
+
   /// Creates an instance of [AnimatedChatRecordButton]
 
   const AnimatedChatRecordButton({
@@ -105,6 +109,7 @@ class AnimatedChatRecordButton extends StatefulWidget {
     this.lockColorSecond = Colors.black,
     this.maxDuration,
     this.minDuration = const Duration(seconds: 2),
+    this.recordingEnabled = true,
   });
 
   /// Creates an instance of [AnimatedChatRecordButton] with a recording output path
@@ -206,7 +211,6 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
   Future requestPermissions() async {
     final PermissionStatus storagePermission =
         await Permission.storage.request();
-    final PermissionStatus mic = await Permission.microphone.request();
 
     if (storagePermission.isGranted) {
       log('Storage permission granted');
@@ -217,11 +221,12 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
       await openAppSettings();
     }
 
-    if (mic.isGranted) {
-      log('mic permission granted');
-    }
-    if (storagePermission.isGranted) {
-      log('notifications permission granted');
+    // Only request microphone permission if recording is enabled
+    if (widget.recordingEnabled) {
+      final PermissionStatus mic = await Permission.microphone.request();
+      if (mic.isGranted) {
+        log('mic permission granted');
+      }
     }
   }
 
@@ -712,7 +717,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
 
   _buildSendOrRecordButton(RecordButtonState state, bool hasText) {
     return GestureDetector(
-      onTapDown: hasText
+      onTapDown: hasText || !widget.recordingEnabled
           ? null
           : (_) {
               // Start a 1s timer to show lock animation + start recording if user holds
@@ -730,28 +735,30 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
               widget.onSend(widget.textEditingController?.text ?? '');
               widget.textEditingController?.clear();
             }
-          : () async {
-              // Cancel pending hold timer; this is a tap
-              _holdToShowLockTimer?.cancel();
-              // Simple tap should start recording without showing lock animation
-              if (!_animationController.isReachedLock.value) {
-                await _handleRecordingStart(fromTap: true);
-              }
-            },
-      onPanStart: hasText
+          : widget.recordingEnabled
+              ? () async {
+                  // Cancel pending hold timer; this is a tap
+                  _holdToShowLockTimer?.cancel();
+                  // Simple tap should start recording without showing lock animation
+                  if (!_animationController.isReachedLock.value) {
+                    await _handleRecordingStart(fromTap: true);
+                  }
+                }
+              : null,
+      onPanStart: hasText || !widget.recordingEnabled
           ? null
           : (_) {
               // Drag started, cancel any pending long-hold timer and start hold recording
               _holdToShowLockTimer?.cancel();
             },
-      onPanUpdate: hasText
+      onPanUpdate: hasText || !widget.recordingEnabled
           ? null
           : state.isReachedLock
               ? null
               : (details) {
                   _animationController.onPanUpdate(details);
                 },
-      onPanEnd: hasText
+      onPanEnd: hasText || !widget.recordingEnabled
           ? null
           : (details) {
               _holdToShowLockTimer?.cancel();
@@ -761,7 +768,7 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
               );
               _animationController.onPanEnd(details);
             },
-      onPanCancel: hasText
+      onPanCancel: hasText || !widget.recordingEnabled
           ? null
           : () {
               _holdToShowLockTimer?.cancel();
@@ -797,7 +804,9 @@ class _AnimatedChatRecordButtonState extends State<AnimatedChatRecordButton>
                 ),
 
                 child: !hasText
-                    ? widget.config.firstRecordingButtonIcon
+                    ? (widget.recordingEnabled 
+                        ? widget.config.firstRecordingButtonIcon 
+                        : widget.config.secondRecordingButtonIcon)
                     : widget.config.secondRecordingButtonIcon,
               ), // Mic icon when no text
             ),
